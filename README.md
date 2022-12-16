@@ -6,7 +6,7 @@ Exemple:
 
 Add the various images (.jpg/.png) to your ggpath directory folder
 
-Run the code "Create circular barplot with logo" in your R console
+Run the code "circular barplot with logo" in your R console
 
 Adapt to your needs
 
