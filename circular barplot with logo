@@ -1,0 +1,67 @@
+library(tidyverse)
+library(ggpath)
+
+dist_image_path=c(system.file(c("r_logo.png"),package = "ggpath"),
+                  system.file(c("python.png"),package = "ggpath"),
+                  system.file(c("bash.png"),package = "ggpath"),
+                  system.file(c("office.png"),package = "ggpath"),
+                  system.file(c("prism.jpg"),package = "ggpath"),
+                  system.file(c("imageJ.png"),package = "ggpath"),
+                  system.file(c("fr.png"),package = "ggpath"),
+                  system.file(c("uk.png"),package = "ggpath"),
+                  system.file(c("de.png"),package = "ggpath"))
+
+data <- data.frame(
+  individual=dist_image_path,
+  group=c( rep('Programming\nlanguage', 3), rep('Software', 3), rep('Language', 3)) ,
+  value=c(60,40,20,80,60,20,80,60,20))
+data$group=as.factor(data$group)
+
+#number of 'empty bar' to aseparate groups
+to_add <- data.frame( matrix(NA, 6, ncol(data)))
+colnames(to_add) <- colnames(data)
+to_add$group = rep(levels(data$group), times=c(2,2,2))
+data <- rbind(data, to_add)
+data <- data %>% arrange(group)
+data$id <- seq(1, nrow(data))
+
+
+# prepare a data frame for base lines
+base_data <- data %>% 
+  group_by(group) %>% 
+  summarize(start=min(id), end=max(id) - nrow(to_add)) %>% 
+  rowwise() %>% 
+  mutate(title=mean(c(start, end)))
+
+# prepare a data frame for grid (scales)
+grid_data <- base_data
+grid_data$end <- grid_data$end[ c( nrow(grid_data), 1:nrow(grid_data)-1)] + 1
+grid_data$start <- grid_data$start - 1
+grid_data <- grid_data[-1,]
+
+# Make the plot
+ggplot(data, aes(x=as.factor(id), y=value, fill=group))+
+  geom_bar(aes(x=as.factor(id), y=value, fill=group), stat="identity", alpha=0.5)+
+  geom_segment(data=grid_data, aes(x = 0, y = 80, xend = 13.75, yend = 80), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = 0, y = 60, xend = 13.75, yend = 60), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = 0, y = 40, xend = 13.75, yend = 40), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = 0, y = 20, xend = 13.75, yend = 20), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = 0, y = 0, xend = 13.75, yend = 0), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  annotate("text", x = rep(max(data$id),4), y = c(20, 40, 60, 80), label = c("basic", "intermediate", "advanced", "proficient") , color="grey", size=3 , hjust=1)+
+  geom_bar(aes(x=as.factor(id), y=value, fill=group), stat="identity", alpha=0.5) +
+  ylim(-100,120) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    panel.grid = element_blank(),
+    plot.margin = unit(rep(-1,4), "cm"))+
+  coord_polar()+
+  geom_from_path(aes(path = individual, y=110), width = 0.075)+
+  geom_text(data=base_data, aes(x = title+2, y = -18, label=group),vjust=c(1,0,1), hjust=c(1,0.5,0), colour = "black", alpha=0.8, size=4, fontface="bold", inherit.aes = FALSE)
+
+
+##made using:
+#https://r-graph-gallery.com/circular-barplot.html
+#https://github.com/mrcaseb/ggpath
